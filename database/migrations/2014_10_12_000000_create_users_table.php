@@ -19,13 +19,9 @@ return new class extends Migration
             $table->string('password');
             $table->string('firstname');
             $table->string('lastname');
-            $table->string('mobile');
-            $table->string('address');
-            $table->unsignedBigInteger('roll_id');
             $table->rememberToken();
             $table->timestamps();
 
-            $table->foreign('roll_id')->references('id')->on('rolls')->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
