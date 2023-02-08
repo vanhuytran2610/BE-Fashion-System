@@ -66,7 +66,7 @@ class CategoryController extends Controller
         if (!$category) {
             return response()->json([
                 "status" => "Error",
-                "message" => "Category could not updated",
+                "message" => "Category could not found",
             ], 401);
         }
         else {
@@ -89,7 +89,7 @@ class CategoryController extends Controller
         if (!$category) {
             return response()->json([
                 "status" => "Error",
-                "message" => "Category could not deleted",
+                "message" => "Category could not found",
             ], 401);
         }
         else {

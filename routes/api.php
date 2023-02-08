@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileAuthController;
+use App\Http\Controllers\SizeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +71,31 @@ Route::group(
         Route::post('/auth/create-color', [ColorController::class, 'createColor']);
         Route::put('/auth/update-color/{id}', [ColorController::class, 'updateColor']);
         Route::delete('/auth/delete-color/{id}', [ColorController::class, 'deleteColor']);
+    }
+);
+
+// Auth - Size
+Route::group(
+    [
+        'middleware' => ['auth:sanctum'],
+    ],
+    function($router) {
+        Route::get('/auth/get-sizes', [SizeController::class, 'getSizes']);
+        Route::get('/auth/get-size/{id}', [SizeController::class, 'getSizeById']);
+        Route::post('/auth/create-size', [SizeController::class, 'createSize']);
+        Route::put('/auth/update-size/{id}', [SizeController::class, 'updateSize']);
+        Route::delete('/auth/delete-size/{id}', [SizeController::class, 'deleteSize']);
+    }
+);
+
+// Product
+Route::group(
+    [
+        'middleware' => 'api'
+    ],
+    function ($router) {
+        Route::post('/auth/create-product', [ProductController::class, 'createProduct'])->middleware('auth:sanctum');
+        Route::get('/get-products', [ProductController::class, 'getProductsByCategory']);
     }
 );
 

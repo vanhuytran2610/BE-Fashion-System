@@ -66,7 +66,7 @@ class ColorController extends Controller
         if (!$color) {
             return response()->json([
                 "status" => "Error",
-                "message" => "Color could not updated",
+                "message" => "Color could not found",
             ], 401);
         }
         else {
@@ -89,7 +89,7 @@ class ColorController extends Controller
         if (!$color) {
             return response()->json([
                 "status" => "Error",
-                "message" => "Color could not deleted",
+                "message" => "Color could not found",
             ], 401);
         }
         else {

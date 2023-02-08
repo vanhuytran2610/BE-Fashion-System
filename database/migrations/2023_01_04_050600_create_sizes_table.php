@@ -13,14 +13,10 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('size_quantity_products', function (Blueprint $table) {
+        Schema::create('sizes', function (Blueprint $table) {
             $table->id();
             $table->string('size');
-            $table->unsignedBigInteger('product_id');
-            $table->integer('quantity');
             $table->timestamps();
-
-            $table->foreign('product_id')->references('id')->on('products')->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
@@ -31,6 +27,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('size_quantity_products');
+        Schema::dropIfExists('sizes');
     }
 };
