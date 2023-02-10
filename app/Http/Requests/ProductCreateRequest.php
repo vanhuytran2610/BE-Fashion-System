@@ -30,7 +30,7 @@ class ProductCreateRequest extends FormRequest
             'description' => 'required|string|min:1|max:1000',
             'category_id' => 'required',
             'color_id' => 'required',
-            'size_id' => 'required',
+            'size' => 'required|string|min:1|max:200',
             'price' => 'required|numeric',
             'quantity' => 'required|numeric'
         ];
