@@ -95,7 +95,7 @@ Route::group(
     ],
     function ($router) {
         Route::post('/auth/create-product', [ProductController::class, 'createProduct'])->middleware('auth:sanctum');
-        Route::get('/get-products', [ProductController::class, 'getProductsByCategory']);
+        Route::get('/get-products', [ProductController::class, 'getProducts']);
     }
 );
 

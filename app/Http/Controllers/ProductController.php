@@ -38,22 +38,15 @@ class ProductController extends Controller
         return response()->json([
             "status" => "OK",
             "message" => "Product was created successfully",
-            "data" => $product,
-            "size" => ($request->size)[0]
+            "data" => $product
         ], 200);
-
-        
     }
     
-    public function getProductsByCategory(Request $request) {
+    public function getProducts(Request $request) {
         $product_query = Product::with(['category', 'color']);
         $products = $product_query->get();
         // $lower_price = Product::whereNotNull('price')->min('price');
         // dd($lower_price);
-
-        $a = "XXS, S, M, L";
-        $b = preg_split('/[\ \n\,]+/', $a);
-        dd($b);
 
         // Filter by category
         if ($request->category) {
@@ -68,13 +61,6 @@ class ProductController extends Controller
                 $query->where('color', $request->color);
             });
         }
-
-        // Filter by size
-        // if ($request->size) {
-        //     $products = $product_query->whereHas('size', function ($query) use ($request) {
-        //         $query->where('size', $request->size);
-        //     });
-        // }
 
         // Filter by price
 
@@ -108,7 +94,8 @@ class ProductController extends Controller
 
         return response()->json([
             "status" => "OK",
-            "data" => $b
+            "data" => $products
         ], 200);
     }
+
 }
