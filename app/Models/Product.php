@@ -25,7 +25,7 @@ class Product extends Model
         return $this->belongsTo(Color::class);
     }
 
-    // public function size() {
-    //     return $this->belongsTo(Size::class);
-    // }
+    public function images() {
+        return $this->hasMany(Image::class);
+    }
 }

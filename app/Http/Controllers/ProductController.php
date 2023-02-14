@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductCreateRequest;
+use App\Http\Requests\ProductUpdateRequest;
 use App\Models\Category;
 use App\Models\Color;
 use App\Models\Product;
@@ -28,9 +29,7 @@ class ProductController extends Controller
             "description" => $request->description,
             "category_id" => $request->category_id,
             "color_id" => $request->color_id,
-            "size" => $request->size,
             "price" => preg_replace('/[^0-9]/', '', $request->price),
-            "quantity" => preg_replace('/[^0-9]/', '', $request->quantity)
         ]);
 
         $product->load('category:id,name', 'color:id,color');
@@ -98,4 +97,80 @@ class ProductController extends Controller
         ], 200);
     }
 
+    public function getProductById($id) {
+        $product = Product::with(['category', 'color'])->where('id', $id)->first();
+        $product->load('category:id,name', 'color:id,color');
+
+        if (!$product) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'No product found'
+            ], 401);
+        }
+        else {
+            return response()->json([
+                'status' => 'OK',
+                'data' => $product
+            ]);
+        }
+    }
+
+    public function updateProduct(ProductUpdateRequest $request, $id) {
+        $category_id = Category::find($request->category_id);
+        $color_id = Color::find($request->color_id);
+
+        if(!$category_id or !$color_id) {
+            return response()->json([
+                "status" => "Error",
+                "message" => "Product could not be saved",
+            ], 401);
+        }
+
+        $product = Product::with(['category', 'color'])->where('id', $id)->first();
+        $product->load('category:id,name', 'color:id,color');
+
+        if(!$product) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'No product found'
+            ]);
+        }
+        else {
+            $product->update([
+                "name" => $request->name,
+                "description" => $request->description,
+                "category_id" => $request->category_id,
+                "color_id" => $request->color_id,
+                "price" => preg_replace('/[^0-9]/', '', $request->price),
+            ]);
+
+            return response()->json([
+                "status" => "OK",
+                "message" => "Product was updated successfully",
+                "data" => $product
+            ], 200);
+        }
+    }
+
+    public function deleteProduct($id) {
+        $product = Product::with(['category', 'color'])->where('id', $id)->first();
+        $product->load('category:id,name', 'color:id,color');
+
+        if (!$product) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'No product found'
+            ]);
+        }
+
+        else {
+            $product->delete();
+
+            return response()->json([
+                "status" => "OK",
+                "message" => "Product was deleted successfully",
+                "data" => $product
+            ], 200);
+        }
+    }
 }
