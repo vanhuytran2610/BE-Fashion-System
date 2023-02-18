@@ -13,10 +13,6 @@ class Product extends Model
         'name', 'description', 'category_id', 'color_id', 'price'
     ];
 
-    protected $casts = [
-        'size' => 'array'
-    ];
-
     public function category() {
         return $this->belongsTo(Category::class);
     }
