@@ -7,7 +7,9 @@ use App\Http\Requests\ProductUpdateRequest;
 use App\Models\Category;
 use App\Models\Color;
 use App\Models\Product;
+use App\Models\ProductColorSize;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -42,26 +44,39 @@ class ProductController extends Controller
     }
     
     public function getProducts(Request $request) {
+        //$product_query = Product::query()->with(['category', 'color']); // for pagination
         $product_query = Product::with(['category', 'color']);
         $products = $product_query->get();
         // $lower_price = Product::whereNotNull('price')->min('price');
         // dd($lower_price);
 
-        // Filter by category
-        if ($request->category) {
+        // Search product by name
+        if ($request->keyword) {
+            $products = $product_query->where('name', 'LIKE', '%'.$request->keyword.'%');
+        }
+
+        // Get by category
+        if ($request->category_id) {
             $products = $product_query->whereHas('category', function ($query) use ($request) {
-                $query->where('name', $request->category);
+                $query->where('id', $request->category_id);
             });
         }
 
         // Filter by color
-        if ($request->color) {
+        if ($request->color_id) {
             $products = $product_query->whereHas('color', function ($query) use ($request) {
-                $query->where('color', $request->color);
+                $query->where('id', $request->color_id);
             });
         }
 
         // Filter by price
+        if ($request->low_price) {
+            $products = $product_query->where('price', '>=', $request->low_price);
+        }
+
+        if ($request->high_price) {
+            $products = $product_query->where('price', '<=', $request->high_price);
+        }
 
         // Sort
         if ($request->sortBy && in_array($request->sortBy, ['id', 'created_at', 'price'])) {
@@ -76,18 +91,20 @@ class ProductController extends Controller
             $sortOrder = 'desc';
         }
 
-        // Pagination
-        if ($request->perPage) {
-            $perPage = $request->perPage;
-        } else {
-            $perPage = 5;
-        }
+        $products = $product_query->orderBY($sortBy, $sortOrder)->get();
 
-        if ($request->paginate) {
-            $products = $product_query->orderBY($sortBy, $sortOrder)->paginate($perPage);
-        } else {
-            $products = $product_query->orderBY($sortBy, $sortOrder)->get();
-        }
+        // Pagination
+        // if ($request->perPage) {
+        //     $perPage = $request->perPage;
+        // } else {
+        //     $perPage = 5;
+        // }
+
+        // if ($request->paginate) {
+        //     $products = $product_query->orderBY($sortBy, $sortOrder)->paginate($perPage);
+        // } else {
+        //     $products = $product_query->orderBY($sortBy, $sortOrder)->get();
+        // }
 
         $products->load('category:id,name', 'color:id,color');
 
@@ -99,7 +116,6 @@ class ProductController extends Controller
 
     public function getProductById($id) {
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
-        $product->load('category:id,name', 'color:id,color');
 
         if (!$product) {
             return response()->json([
@@ -108,6 +124,7 @@ class ProductController extends Controller
             ], 401);
         }
         else {
+            $product->load('category:id,name', 'color:id,color');
             return response()->json([
                 'status' => 'OK',
                 'data' => $product
@@ -127,8 +144,7 @@ class ProductController extends Controller
         }
 
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
-        $product->load('category:id,name', 'color:id,color');
-
+        
         if(!$product) {
             return response()->json([
                 'status' => 'Error',
@@ -144,6 +160,8 @@ class ProductController extends Controller
                 "price" => preg_replace('/[^0-9]/', '', $request->price),
             ]);
 
+            $product->load('category:id,name', 'color:id,color');
+
             return response()->json([
                 "status" => "OK",
                 "message" => "Product was updated successfully",
@@ -154,7 +172,6 @@ class ProductController extends Controller
 
     public function deleteProduct($id) {
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
-        $product->load('category:id,name', 'color:id,color');
 
         if (!$product) {
             return response()->json([
@@ -164,6 +181,7 @@ class ProductController extends Controller
         }
 
         else {
+            $product->load('category:id,name', 'color:id,color');
             $product->delete();
 
             return response()->json([
