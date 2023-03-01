@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorController;
+use App\Http\Controllers\ProductColorSizeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileAuthController;
 use App\Http\Controllers\SizeController;
@@ -99,6 +100,20 @@ Route::group(
         Route::get('/get-product/{id}', [ProductController::class, 'getProductById']);
         Route::put('/auth/update-product/{id}', [ProductController::class, 'updateProduct'])->middleware('auth:sanctum');
         Route::delete('/auth/delete-product/{id}', [ProductController::class, 'deleteProduct'])->middleware('auth:sanctum');
+    }
+);
+
+// Product-Size-Quantity
+Route::group(
+    [
+        'middleware' => ['auth:sanctum'],
+    ],
+    function ($router) {
+        Route::post('/auth/create-data', [ProductColorSizeController::class, 'create']);
+        Route::get('/auth/get-all-data', [ProductColorSizeController::class, 'getAll']);
+        Route::get('/auth/get-data/{id}', [ProductController::class, 'getDetailById']);
+        Route::put('/auth/update-data/{id}', [ProductController::class, 'update']);
+        Route::delete('/auth/delete-data/{id}', [ProductController::class, 'delete']);
     }
 );
 

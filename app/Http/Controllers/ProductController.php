@@ -6,31 +6,61 @@ use App\Http\Requests\ProductCreateRequest;
 use App\Http\Requests\ProductUpdateRequest;
 use App\Models\Category;
 use App\Models\Color;
+use App\Models\Image;
 use App\Models\Product;
 use App\Models\ProductColorSize;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class ProductController extends Controller
 {
-    public function createProduct (ProductCreateRequest $request) {
+    public function createProduct(ProductCreateRequest $request)
+    {
         $category_id = Category::find($request->category_id);
         $color_id = Color::find($request->color_id);
 
-        if(!$category_id or !$color_id) {
+        if (!$category_id or !$color_id) {
             return response()->json([
                 "status" => "Error",
                 "message" => "Product could not be saved",
             ], 401);
         }
 
-        //$size = json_decode($request->size, true);
-        
+        $image_avatar = $request->file('image_avatar');
+        if ($request->hasFile('image_avatar')) {
+            $new_img_avatar = time() . '.' . $image_avatar->getClientOriginalExtension();
+            $image_avatar->move(public_path('/images/avatar'), $new_img_avatar);
+        } else {
+            return response()->json([
+                "status" => "Error",
+                "message" => "Product Avatar Image does not exist",
+            ], 404);
+        }
+
+        $images = $request->file('image');
+        $imageName = '';
+
+        if ($request->hasFile('image')) {
+            foreach ($images as $image) {
+                $new_imgs = time() . '.' . $image_avatar->getClientOriginalExtension();
+                $image->move(public_path('/images/images'), $new_imgs);
+                $imageName = $imageName . $new_imgs . ",";
+            }
+        } else {
+            return response()->json([
+                "status" => "Error",
+                "message" => "Product Images does not exist",
+            ], 404);
+        }
+
         $product = Product::create([
             "name" => $request->name,
             "description" => $request->description,
             "category_id" => $request->category_id,
             "color_id" => $request->color_id,
+            "image_avatar" => $new_img_avatar,
+            "image" => $imageName,
             "price" => preg_replace('/[^0-9]/', '', $request->price),
         ]);
 
@@ -42,8 +72,9 @@ class ProductController extends Controller
             "data" => $product
         ], 200);
     }
-    
-    public function getProducts(Request $request) {
+
+    public function getProducts(Request $request)
+    {
         //$product_query = Product::query()->with(['category', 'color']); // for pagination
         $product_query = Product::with(['category', 'color']);
         $products = $product_query->get();
@@ -52,7 +83,7 @@ class ProductController extends Controller
 
         // Search product by name
         if ($request->keyword) {
-            $products = $product_query->where('name', 'LIKE', '%'.$request->keyword.'%');
+            $products = $product_query->where('name', 'LIKE', '%' . $request->keyword . '%');
         }
 
         // Get by category
@@ -114,7 +145,8 @@ class ProductController extends Controller
         ], 200);
     }
 
-    public function getProductById($id) {
+    public function getProductById($id)
+    {
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
 
         if (!$product) {
@@ -122,8 +154,7 @@ class ProductController extends Controller
                 'status' => 'Error',
                 'message' => 'No product found'
             ], 401);
-        }
-        else {
+        } else {
             $product->load('category:id,name', 'color:id,color');
             return response()->json([
                 'status' => 'OK',
@@ -132,31 +163,64 @@ class ProductController extends Controller
         }
     }
 
-    public function updateProduct(ProductUpdateRequest $request, $id) {
-        $category_id = Category::find($request->category_id);
-        $color_id = Color::find($request->color_id);
-
-        if(!$category_id or !$color_id) {
-            return response()->json([
-                "status" => "Error",
-                "message" => "Product could not be saved",
-            ], 401);
-        }
-
+    public function updateProduct(ProductUpdateRequest $request, $id)
+    {
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
-        
-        if(!$product) {
+
+        if (!$product) {
             return response()->json([
                 'status' => 'Error',
                 'message' => 'No product found'
             ]);
-        }
-        else {
+        } else {
+            $category_id = Category::find($request->category_id);
+            $color_id = Color::find($request->color_id);
+
+            if (!$category_id or !$color_id) {
+                return response()->json([
+                    "status" => "Error",
+                    "message" => "Product could not be saved",
+                ], 401);
+            }
+
+            $image_avatar = $request->file('image_avatar');
+            if ($request->hasFile('image_avatar')) {
+                $img_avatar = time() . '.' . $image_avatar->getClientOriginalExtension();
+                $image_avatar->move(public_path('/images/avatar'), $img_avatar);
+                $old_path_ava = public_path() . 'images/avatar' . $product->image_avatar;
+
+                if (File::exists($old_path_ava)) {
+                    File::delete($old_path_ava);
+                }
+            } else {
+                $img_avatar = $product->image_avatar;
+            }
+
+            $images = $request->file('image');
+            $imageName = '';
+
+            if ($request->hasFile('image')) {
+                foreach ($images as $image) {
+                    $imgs = time() . '.' . $image_avatar->getClientOriginalExtension();
+                    $image->move(public_path('/images/images'), $imgs);
+                    $imageName = $imageName . $imgs . ",";
+                    $old_path = public_path() . 'images/images' . $product->image;
+
+                    if (File::exists($old_path)) {
+                        File::delete($old_path);
+                    }
+                }
+            } else {
+                $imageName = $product->image;
+            }
+
             $product->update([
                 "name" => $request->name,
                 "description" => $request->description,
                 "category_id" => $request->category_id,
                 "color_id" => $request->color_id,
+                "image_avatar" => $img_avatar,
+                "image" => $imageName,
                 "price" => preg_replace('/[^0-9]/', '', $request->price),
             ]);
 
@@ -170,7 +234,8 @@ class ProductController extends Controller
         }
     }
 
-    public function deleteProduct($id) {
+    public function deleteProduct($id)
+    {
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
 
         if (!$product) {
@@ -178,9 +243,7 @@ class ProductController extends Controller
                 'status' => 'Error',
                 'message' => 'No product found'
             ]);
-        }
-
-        else {
+        } else {
             $product->load('category:id,name', 'color:id,color');
             $product->delete();
 

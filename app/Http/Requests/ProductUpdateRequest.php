@@ -28,6 +28,8 @@ class ProductUpdateRequest extends FormRequest
         return [
             'name' => 'string|min:1|max:100',
             'description' => 'string|min:1|max:1000',
+            'image_avatar' => 'image|mimes:jpg,bmp,png',
+            'image' => 'nullable',
             'price' => 'numeric',
         ];
     }
