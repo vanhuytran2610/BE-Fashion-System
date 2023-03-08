@@ -40,6 +40,7 @@ class ColorController extends Controller
 
     // Create new color
     public function createColor (ColorCreateRequest $request) {
+        $this->authorize('authorize');
         $color = Color::create([
             'color' => $request->color
         ]);
@@ -61,6 +62,7 @@ class ColorController extends Controller
 
     // Update color
     public function updateColor(ColorUpdateRequest $request, $id) {
+        $this->authorize('authorize');
         $color = Color::where("id", $id)->first();
 
         if (!$color) {
@@ -84,6 +86,7 @@ class ColorController extends Controller
 
     // Delete color
     public function deleteColor ($id) {
+        $this->authorize('authorize');
         $color = Color::where('id', $id)->first();
 
         if (!$color) {

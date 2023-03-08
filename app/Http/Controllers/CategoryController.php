@@ -40,6 +40,7 @@ class CategoryController extends Controller
 
     // Create new category
     public function createCategory (CategoryCreateRequest $request) {
+        $this->authorize('authorize');
         $category = Category::create([
             'name' => $request->name
         ]);
@@ -61,6 +62,7 @@ class CategoryController extends Controller
 
     // Update category
     public function updateCategory (CategoryUpdateRequest $request, $id) {
+        $this->authorize('authorize');
         $category = Category::where("id", $id)->first();
 
         if (!$category) {
@@ -84,6 +86,7 @@ class CategoryController extends Controller
 
     // Delete category
     public function deleteCategory ($id) {
+        $this->authorize('authorize');
         $category = Category::where('id', $id)->first();
 
         if (!$category) {

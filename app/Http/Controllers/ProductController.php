@@ -17,6 +17,7 @@ class ProductController extends Controller
 {
     public function createProduct(ProductCreateRequest $request)
     {
+        $this->authorize('authorize');
         $category_id = Category::find($request->category_id);
         $color_id = Color::find($request->color_id);
 
@@ -165,6 +166,7 @@ class ProductController extends Controller
 
     public function updateProduct(ProductUpdateRequest $request, $id)
     {
+        $this->authorize('authorize');
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
 
         if (!$product) {
@@ -236,6 +238,7 @@ class ProductController extends Controller
 
     public function deleteProduct($id)
     {
+        $this->authorize('authorize');
         $product = Product::with(['category', 'color'])->where('id', $id)->first();
 
         if (!$product) {

@@ -10,25 +10,30 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(AuthRegisterRequest $request) {
-        $user = User::create([
+    public function register(AuthRegisterRequest $request)
+    {
+        $this->authorize('authorize');
+        
+        $new_user = User::create([
             'firstname' => $request->firstname,
             'lastname' => $request->lastname,
             'email' => $request->email,
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
+            'role_id' => $request->role_id
         ]);
 
-        $token = $user->createToken('myapptoken')->plainTextToken;
-
+        $token = $new_user->createToken('myapptoken')->plainTextToken;
+        $new_user->load('role:id,name');
         return response()->json([
             'status' => 'OK',
             'message' => 'Register Successfully',
             'token' => $token,
-            'data' => $user
-        ],200);
+            'data' => $new_user
+        ], 200);
     }
 
-    public function login(AuthLoginRequest $request) {
+    public function login(AuthLoginRequest $request)
+    {
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
@@ -36,19 +41,17 @@ class AuthController extends Controller
                 'status' => 'Error',
                 'message' => 'Email or password was wrong, please re-enter',
             ], 400);
-        }
-        else {
-            if (Hash::check($request->password, $user->password)){
+        } else {
+            if (Hash::check($request->password, $user->password)) {
                 $token = $user->createToken('myapptoken')->plainTextToken;
-
+                $user->load('role:id,name');
                 return response()->json([
                     'status' => 'OK',
                     'message' => 'Login Successfully',
                     'token' => $token,
                     'data' => $user
                 ], 200);
-            }
-            else {
+            } else {
                 return response()->json([
                     'status' => 'Error',
                     'message' => 'Email or password was wrong, please re-enter',
@@ -57,7 +60,8 @@ class AuthController extends Controller
         }
     }
 
-    public function logout(Request $request) {
+    public function logout(Request $request)
+    {
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([

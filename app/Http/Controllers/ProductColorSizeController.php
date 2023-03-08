@@ -11,6 +11,7 @@ class ProductColorSizeController extends Controller
 {
     public function getAll(Request $request)
     {
+        $this->authorize('authorize');
         $prod_size_quans = ProductColorSize::all();
         $prod_size_quans->load('product:id,name', 'size:id,size');
         return response()->json([
@@ -21,6 +22,7 @@ class ProductColorSizeController extends Controller
 
     public function getDetailById($id)
     {
+        $this->authorize('authorize');
         $prod_size_quan = ProductColorSize::where("id", $id)->first();
 
         if (!$prod_size_quan) {
@@ -39,6 +41,7 @@ class ProductColorSizeController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('authorize');
         $product_id = Product::find($request->product_id);
         $size_id = Size::find($request->size_id);
 
@@ -72,6 +75,7 @@ class ProductColorSizeController extends Controller
 
     public function update (Request $request, $id)
     {
+        $this->authorize('authorize');
         $prod_size_quan = ProductColorSize::where("id", $id)->first();
 
         if (!$prod_size_quan) {
@@ -106,6 +110,7 @@ class ProductColorSizeController extends Controller
 
     public function delete ($id)
     {
+        $this->authorize('authorize');
         $prod_size_quan = ProductColorSize::where('id', $id)->first();
 
         if (!$prod_size_quan) {
