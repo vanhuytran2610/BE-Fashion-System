@@ -17,7 +17,7 @@ class ColorController extends Controller
         return response()->json([
             "status" => "OK",
             "data" => $colors
-        ]);
+        ],200);
     }
 
     // Get Detail Color By Id
@@ -27,7 +27,7 @@ class ColorController extends Controller
         if (!$color) {
             return response()->json([
                 'status' => 'Error',
-                'message' => 'No colors found'
+                'message' => 'This color does not exist'
             ], 404);
         }
         else {
@@ -40,7 +40,7 @@ class ColorController extends Controller
 
     // Create new color
     public function createColor (ColorCreateRequest $request) {
-        $this->authorize('authorize');
+        // $this->authorize('authorize');
         $color = Color::create([
             'color' => $request->color
         ]);
@@ -62,14 +62,14 @@ class ColorController extends Controller
 
     // Update color
     public function updateColor(ColorUpdateRequest $request, $id) {
-        $this->authorize('authorize');
+        // $this->authorize('authorize');
         $color = Color::where("id", $id)->first();
 
         if (!$color) {
             return response()->json([
                 "status" => "Error",
-                "message" => "Color could not found",
-            ], 401);
+                "message" => "This color does not exist",
+            ], 404);
         }
         else {
             $color->update([
@@ -86,14 +86,14 @@ class ColorController extends Controller
 
     // Delete color
     public function deleteColor ($id) {
-        $this->authorize('authorize');
+        // $this->authorize('authorize');
         $color = Color::where('id', $id)->first();
 
         if (!$color) {
             return response()->json([
                 "status" => "Error",
-                "message" => "Color could not found",
-            ], 401);
+                "message" => "This color does not exist",
+            ], 404);
         }
         else {
             $color->delete();

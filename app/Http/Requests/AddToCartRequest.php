@@ -2,11 +2,12 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Contracts\Validation\Validator as ValidationValidator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Validator;
 
-class AuthRegisterRequest extends FormRequest
+class AddToCartRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,23 +27,18 @@ class AuthRegisterRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email|unique:users', 
-            'password' => 'required|min:6|max:100',
-            'confirm_password' => 'required|same:password', 
-            'firstname' => 'required|min:2|max:100', 
-            'lastname' => 'required|min:2|max:100', 
-            'role_id' => 'required'
+            'product_quantity' => 'required|numeric' 
         ];
     }
 
-    protected function failedValidation(Validator $validator)
+    protected function failedValidation(ValidationValidator $validator)
     {
         throw new HttpResponseException(
             response()->json([
                 'status' => 'Error',
                 'message' => 'Validations fails',
                 'error' => $validator->errors()
-            ], 422)
+            ],422)
         );
-    }
+    } 
 }

@@ -4,7 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 //use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\ProductColorSizeController;
 use App\Http\Controllers\ProductController;
@@ -28,9 +30,8 @@ Route::group(
         'middleware' => 'api'
     ],
     function ($router) {
-        Route::post('/auth/register', [AuthController::class, 'register']);
         Route::post('/auth/login', [AuthController::class, 'login']);
-        
+        Route::post('/auth/register', [AuthController::class, 'register']);
     }
 );
 
@@ -39,11 +40,12 @@ Route::group(
     [
         'middleware' => ['auth:sanctum'],
     ],
-    function($router) {
+    function($router) {  
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/change-password', [ProfileAuthController::class, 'changePassword']);
         Route::post('/auth/update-profile', [ProfileAuthController::class, 'updateProfile']);
         Route::get('/auth/profile', [ProfileAuthController::class, 'getAuthProfile']);
+        Route::get('auth/get-users', [ProfileAuthController::class, 'getAllUsers']);
     }
 );
 
@@ -92,28 +94,36 @@ Route::group(
 // Product
 Route::group(
     [
-        'middleware' => 'api'
+        'middleware' => ['auth:sanctum']
     ],
     function ($router) {
-        Route::post('/auth/create-product', [ProductController::class, 'createProduct'])->middleware('auth:sanctum');
-        Route::get('/get-products', [ProductController::class, 'getProducts']);
-        Route::get('/get-product/{id}', [ProductController::class, 'getProductById']);
-        Route::put('/auth/update-product/{id}', [ProductController::class, 'updateProduct'])->middleware('auth:sanctum');
-        Route::delete('/auth/delete-product/{id}', [ProductController::class, 'deleteProduct'])->middleware('auth:sanctum');
+        Route::post('/auth/create-product', [ProductController::class, 'createProduct']);
+        Route::get('/auth/get-products', [ProductController::class, 'getProducts']);
+        Route::get('/auth/get-product/{id}', [ProductController::class, 'getProductById']);
+        Route::put('/auth/update-product/{id}', [ProductController::class, 'updateProduct']);
+        Route::delete('/auth/delete-product/{id}', [ProductController::class, 'deleteProduct']);
     }
 );
 
-// Product-Size-Quantity
+// Cart
 Route::group(
     [
         'middleware' => ['auth:sanctum'],
     ],
     function ($router) {
-        Route::post('/auth/create-data', [ProductColorSizeController::class, 'create']);
-        Route::get('/auth/get-all-data', [ProductColorSizeController::class, 'getAll']);
-        Route::get('/auth/get-data/{id}', [ProductController::class, 'getDetailById']);
-        Route::put('/auth/update-data/{id}', [ProductController::class, 'update']);
-        Route::delete('/auth/delete-data/{id}', [ProductController::class, 'delete']);
+        Route::post('/auth/add-to-cart', [CartController::class, 'addToCart']);
+        Route::get('/auth/carts', [CartController::class, 'viewCart']);
+        Route::put('/auth/update-quantity/{cart_id}/{scope}', [CartController::class, 'updateQuantity']);
+        Route::delete('auth/delete-cartitem/{cart_id}',[CartController::class, 'deleteCartItem']);
     }
 );
 
+// Order and Checkout
+Route::group(
+    [
+        'middleware' => ['auth:sanctum'],
+    ],
+    function ($router) {
+        Route::post('/auth/place-order', [CheckoutController::class, 'placeOrder']);
+    }
+);

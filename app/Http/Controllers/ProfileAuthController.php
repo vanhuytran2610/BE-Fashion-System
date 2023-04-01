@@ -11,14 +11,21 @@ use Illuminate\Support\Facades\Hash;
 class ProfileAuthController extends Controller
 {
     public function getAllUsers() {
-        $this->authorize('authorize');
-        $users = User::all();
-        $users->load('role:id,name');
-
-        return response()->json([
-            'status' => 'OK',
-            'data' => $users
-        ], 200);
+        // if($this->authorize('authorize')) {
+            $users = User::all();
+            $users->load('role:id,name');
+    
+            return response()->json([
+                'status' => 'OK',
+                'data' => $users
+            ], 200);
+        // }
+        // else {
+        //     return response()->json([
+        //         'status' => 'Error',
+        //         'message' => 'Only Admin has access'
+        //     ],401);
+        // }
     }
 
     public function getAuthProfile() {

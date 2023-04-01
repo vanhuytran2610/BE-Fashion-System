@@ -40,7 +40,7 @@ class SizeController extends Controller
 
     // Create new size
     public function createSize (SizeCreateRequest $request) {
-        $this->authorize('authorize');
+        // $this->authorize('authorize');
         $size = Size::create([
             'size' => $request->size
         ]);
@@ -62,7 +62,7 @@ class SizeController extends Controller
 
     // Update size
     public function updateSize(SizeUpdateRequest $request, $id) {
-        $this->authorize('authorize');
+        // $this->authorize('authorize');
         $size = Size::where("id", $id)->first();
 
         if (!$size) {
@@ -86,7 +86,7 @@ class SizeController extends Controller
 
     // Delete size
     public function deleteSize ($id) {
-        $this->authorize('authorize');
+        // $this->authorize('authorize');
         $size = Size::where('id', $id)->first();
 
         if (!$size) {

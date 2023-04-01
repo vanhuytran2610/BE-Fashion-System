@@ -31,6 +31,7 @@ class ProductUpdateRequest extends FormRequest
             'image_avatar' => 'image|mimes:jpg,bmp,png',
             'image' => 'nullable',
             'price' => 'numeric',
+            'quantity' => 'numeric'
         ];
     }
 

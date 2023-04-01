@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AuthLoginRequest;
 use App\Http\Requests\AuthRegisterRequest;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,8 +13,15 @@ class AuthController extends Controller
 {
     public function register(AuthRegisterRequest $request)
     {
-        $this->authorize('authorize');
-        
+        $role_id = Role::find($request->role_id);
+
+        if (!$role_id) {
+            return response()->json([
+                "status" => "Error",
+                "message" => "This Role does not exist",
+            ], 404);
+        }
+
         $new_user = User::create([
             'firstname' => $request->firstname,
             'lastname' => $request->lastname,

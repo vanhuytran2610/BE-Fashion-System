@@ -30,9 +30,11 @@ class ProductCreateRequest extends FormRequest
             'description' => 'required|string|min:1|max:1000',
             'category_id' => 'required',
             'color_id' => 'required',
+            'size_id' => 'required',
             'image_avatar' => 'required|image|mimes:jpg,bmp,png',
             'image' => 'nullable',
             'price' => 'required|numeric',
+            'quantity' => 'required|numeric'
         ];
     }
 

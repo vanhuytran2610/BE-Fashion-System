@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class AuthRegisterRequest extends FormRequest
+class PlaceOrderRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,12 +26,12 @@ class AuthRegisterRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email|unique:users', 
-            'password' => 'required|min:6|max:100',
-            'confirm_password' => 'required|same:password', 
-            'firstname' => 'required|min:2|max:100', 
-            'lastname' => 'required|min:2|max:100', 
-            'role_id' => 'required'
+            'firstname' => 'required|max:100',
+            'lastname' => 'required|max:100',
+            'phone' => 'required|max:100',
+            'address' => 'required|max: 1000',
+            'district' => 'required|max: 100',
+            'city' => 'required|max: 100',
         ];
     }
 
@@ -42,7 +42,7 @@ class AuthRegisterRequest extends FormRequest
                 'status' => 'Error',
                 'message' => 'Validations fails',
                 'error' => $validator->errors()
-            ], 422)
+            ],422)
         );
     }
 }
