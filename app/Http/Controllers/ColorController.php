@@ -10,58 +10,52 @@ use Illuminate\Http\Request;
 class ColorController extends Controller
 {
     // Get All Colors
-    public function getColors (Request $request) 
+    public function getColors(Request $request)
     {
         $colors = Color::all();
 
         return response()->json([
-            "status" => "OK",
+            "status" => 200,
             "data" => $colors
-        ],200);
+        ]);
     }
 
     // Get Detail Color By Id
-    public function getColorById ($id) {
+    public function getColorById($id)
+    {
         $color = Color::where("id", $id)->first();
 
         if (!$color) {
             return response()->json([
-                'status' => 'Error',
+                'status' => 404,
                 'message' => 'This color does not exist'
-            ], 404);
-        }
-        else {
+            ]);
+        } else {
             return response()->json([
-                'status' => 'OK',
+                'status' => 200,
                 'data' => $color
-            ], 200);
+            ]);
         }
     }
 
     // Create new color
-    public function createColor (ColorCreateRequest $request) {
+    public function createColor(ColorCreateRequest $request)
+    {
         // $this->authorize('authorize');
         $color = Color::create([
             'color' => $request->color
         ]);
 
-        if (!$color) {
-            return response()->json([
-                "status" => "Error",
-                "message" => "Color could not be saved",
-            ], 401);
-        }
-        else {
-            return response()->json([
-                "status" => "OK",
-                "message" => "Color was created successfully",
-                "data" => $color
-            ], 200);
-        }
+        return response()->json([
+            "status" => 201,
+            "message" => "Color was created successfully",
+            "data" => $color
+        ]);
     }
 
     // Update color
-    public function updateColor(ColorUpdateRequest $request, $id) {
+    public function updateColor(ColorUpdateRequest $request, $id)
+    {
         // $this->authorize('authorize');
         $color = Color::where("id", $id)->first();
 
@@ -70,8 +64,7 @@ class ColorController extends Controller
                 "status" => "Error",
                 "message" => "This color does not exist",
             ], 404);
-        }
-        else {
+        } else {
             $color->update([
                 "color" => $request->color
             ]);
@@ -85,7 +78,8 @@ class ColorController extends Controller
     }
 
     // Delete color
-    public function deleteColor ($id) {
+    public function deleteColor($id)
+    {
         // $this->authorize('authorize');
         $color = Color::where('id', $id)->first();
 
@@ -94,15 +88,14 @@ class ColorController extends Controller
                 "status" => "Error",
                 "message" => "This color does not exist",
             ], 404);
-        }
-        else {
+        } else {
             $color->delete();
 
             return response()->json([
                 'status' => 'OK',
                 'message' => 'Color was deleted successfully',
                 'data' => $color
-            ],200);
+            ], 200);
         }
     }
 }

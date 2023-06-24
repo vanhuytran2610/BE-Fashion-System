@@ -8,62 +8,91 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function register(AuthRegisterRequest $request)
+    public function register(Request $request)
     {
-        $role_id = Role::find($request->role_id);
-
-        if (!$role_id) {
-            return response()->json([
-                "status" => "Error",
-                "message" => "This Role does not exist",
-            ], 404);
-        }
-
-        $new_user = User::create([
-            'firstname' => $request->firstname,
-            'lastname' => $request->lastname,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role_id' => $request->role_id
+        $validate = Validator::make($request->all(), [
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6|max:100',
+            'confirm_password' => 'required|same:password',
+            'firstname' => 'required|min:2|max:100',
+            'lastname' => 'required|min:2|max:100',
         ]);
 
-        $token = $new_user->createToken('myapptoken')->plainTextToken;
-        $new_user->load('role:id,name');
-        return response()->json([
-            'status' => 'OK',
-            'message' => 'Register Successfully',
-            'token' => $token,
-            'data' => $new_user
-        ], 200);
+        if ($validate->fails()) {
+            return response()->json([
+                'error' => $validate->messages()
+            ]);
+        } else {
+            $new_user = User::create([
+                'firstname' => $request->firstname,
+                'lastname' => $request->lastname,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'province_code' => $request->province_code,
+                'district_code' => $request->district_code,
+                'ward_code' => $request->ward_code,
+                'address' => $request->address,
+                'phone' => $request->phone,
+            ]);
+
+            $token = $new_user->createToken($new_user->email . '_Usertoken')->plainTextToken;
+
+            return response()->json([
+                'status' => 201,
+                'message' => 'Register Successfully',
+                'token' => $token,
+                'data' => $new_user
+            ], 201);
+        }
     }
 
-    public function login(AuthLoginRequest $request)
+    public function login(Request $request)
     {
-        $user = User::where('email', $request->email)->first();
+        $validate = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string|min:6|max:100'
+        ]);
 
-        if (!$user) {
+        if ($validate->fails()) {
             return response()->json([
-                'status' => 'Error',
-                'message' => 'Email or password was wrong, please re-enter',
-            ], 400);
+                'error' => $validate->messages()
+            ]);
         } else {
-            if (Hash::check($request->password, $user->password)) {
-                $token = $user->createToken('myapptoken')->plainTextToken;
-                $user->load('role:id,name');
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
                 return response()->json([
-                    'status' => 'OK',
-                    'message' => 'Login Successfully',
-                    'token' => $token,
-                    'data' => $user
-                ], 200);
-            } else {
+                    'status' => 'Invalid',
+                    'message' => 'Email does not exist, please try again!',
+                ]);
+            } else if (!Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'status' => 'Error',
-                    'message' => 'Email or password was wrong, please re-enter',
-                ], 400);
+                    'message' => 'Password was wrong, please re-enter',
+                ]);
+            } else {
+                // 1 is Admin
+                if ($user->role_id == 1) {
+                    $role = 'Admin';
+                    $token = $user->createToken($user->email . '_Admintoken', ['server:admin'])->plainTextToken;
+                }
+                // 2 is User
+                else if ($user->role_id == 2) {
+                    $role = 'User';
+                    $token = $user->createToken($user->email . '_Usertoken', [''])->plainTextToken;
+                }
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Login Successfully',
+                    'token' => $token,
+                    'data' => $user,
+                    'role' => $role
+                ]);
             }
         }
     }
@@ -73,8 +102,8 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'status' => 'OK',
+            'status' => 200,
             'message' => 'Logout Successfully'
-        ], 200);
+        ]);
     }
 }

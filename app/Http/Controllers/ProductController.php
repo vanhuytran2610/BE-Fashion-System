@@ -8,132 +8,143 @@ use App\Models\Category;
 use App\Models\Color;
 use App\Models\Image;
 use App\Models\Product;
-use App\Models\ProductColorSize;
+use App\Models\ProductImage;
+use App\Models\ProductSize;
 use App\Models\Size;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
-    public function createProduct(ProductCreateRequest $request)
+    public function createProduct(Request $request)
     {
-        // if($this->authorize('authorize')) {
-            $category_id = Category::find($request->category_id);
-            $color_id = Color::find($request->color_id);
-            $size_id = Size::find($request->size_id);
-    
-            if (!$category_id) {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "This Category does not exist",
-                ], 404);
-            }
-            if (!$category_id or !$color_id) {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "This Category and This Color do not exist",
-                ], 404);
-            }
-            if (!$category_id or !$size_id) {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "This Category and This Size do not exist",
-                ], 404);
-            }
-            if (!$category_id or !$color_id or !$size_id) {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "This Category, This Color and This Size do not exist",
-                ], 404);
-            }
-            if (!$size_id) {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "This Size does not exist",
-                ], 404);
-            }
-            if (!$size_id or !$color_id) {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "This Size and This Color do not exist",
-                ], 404);
-            }
-            if (!$color_id) {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "This Color does not exist",
-                ], 404);
-            }
-            
-    
-            $image_avatar = $request->file('image_avatar');
-            if ($request->hasFile('image_avatar')) {
-                $new_img_avatar = time() . '.' . $image_avatar->getClientOriginalExtension();
-                $image_avatar->move(public_path('/images/avatar'), $new_img_avatar);
-            } else {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "Product Avatar Image does not exist",
-                ], 404);
-            }
-    
-            $images = $request->file('image');
-            $imageName = '';
-    
-            if ($request->hasFile('image')) {
-                foreach ($images as $image) {
-                    $new_imgs = time() . '.' . $image_avatar->getClientOriginalExtension();
-                    $image->move(public_path('/images/images'), $new_imgs);
-                    $imageName = $imageName . $new_imgs . ",";
-                }
-            } else {
-                return response()->json([
-                    "status" => "Error",
-                    "message" => "Product Images does not exist",
-                ], 404);
-            }
-    
-            $product = Product::create([
-                "name" => $request->name,
-                "description" => $request->description,
-                "category_id" => $request->category_id,
-                "color_id" => $request->color_id,
-                "size_id" => $request->size_id,
-                "image_avatar" => $new_img_avatar,
-                "image" => $imageName,
-                "price" => preg_replace('/[^0-9]/', '', $request->price),
-                "quantity" => $request->quantity
-            ]);
-    
-            $product->load('category:id,name', 'color:id,color', 'size:id,size');
-    
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255|unique:products,name',
+            'description' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'color_id' => 'required|exists:colors,id',
+            'price' => 'required|numeric|max:10000000',
+            'sizes' => 'required|array',
+            'sizes.*.id' => 'required|exists:sizes,id',
+            'sizes.*.quantity' => 'required|integer|max:1000',
+            'image_avatar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'image',
+        ]);
+
+        if ($validator->fails()) {
             return response()->json([
-                "status" => "OK",
-                "message" => "Product was created successfully",
-                "data" => $product
-            ], 200);
-        // }
-        // else {
-        //     return response()->json([
-        //         'status' => 'Error',
-        //         'message' => 'Only Admin has access'
-        //     ],401);
-        // }
+                'status' => 422,
+                'errors' => $validator->errors(),
+            ]);
+        }
+
+        $product = new Product;
+        $product->name = $request->input('name');
+        $product->description = $request->input('description');
+        $product->category_id = $request->input('category_id');
+        $product->color_id = $request->input('color_id');
+        $product->price = $request->input('price');
+        $product->save();
+
+        $sizes = $request->input('sizes');
+        foreach ($sizes as $size) {
+            $productSize = new ProductSize;
+            $productSize->product_id = $product->id;
+            $productSize->size_id = $size['id'];
+            $productSize->quantity = $size['quantity'];
+            $productSize->save();
+        }
+        $productSize = $product->sizes;
+
+        if ($request->hasFile('image_avatar')) {
+            $file = $request->file('image_avatar');
+            $extension = $file->getClientOriginalExtension();
+            $fileName = time() . '.' . $extension;
+            $file->move('uploads/product/', $fileName);
+            $product->image_avatar = 'uploads/product/' . $fileName;
+        }
+
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+            foreach ($images as $image) {
+                $extension = $image->getClientOriginalExtension();
+                $fileName = time() . '_' . uniqid() . '.' . $extension;
+                $image->move('uploads/product/', $fileName);
+
+                $productImage = new ProductImage;
+                $productImage->product_id = $product->id;
+                $productImage->image_path = 'uploads/product/' . $fileName;
+                $productImage->save();
+            }
+        }
+        $product->save();
+        $productImages = $product->images;
+
+        return response()->json([
+            'status' => 201,
+            'message' => 'Products created successfully',
+            'data' => $product
+        ]);
     }
 
+    public function searchProduct(Request $request)
+    {
+        $searchTerm = $request->input('search');
+
+        $products = Product::search($searchTerm)->get();
+
+        return response()->json($products);
+    }
+
+    public function index(Request $request)
+    {
+        $query = Product::query();
+
+        // Search by name
+        if ($request->has('search')) {
+            $query->where('name', 'LIKE', '%' . $request->search . '%');
+        }
+
+        // Sort by created_at or price
+        if ($request->has('sort')) {
+            $sortField = $request->sort;
+            $sortDirection = $request->has('direction') ? $request->direction : 'asc';
+
+            $query->orderBy($sortField, $sortDirection);
+        }
+
+        // Filter by category
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by color
+        if ($request->has('color_id')) {
+            $query->where('color_id', $request->color_id);
+        }
+
+        $products = $query->get();
+
+        return response()->json($products);
+    }
+    
     public function getProducts(Request $request)
     {
         //$product_query = Product::query()->with(['category', 'color']); // for pagination
-        $product_query = Product::with(['category', 'color']);
+        $product_query = Product::with(['category', 'color', 'images', 'sizes']);
         $products = $product_query->get();
         // $lower_price = Product::whereNotNull('price')->min('price');
         // dd($lower_price);
 
         // Search product by name
-        if ($request->keyword) {
-            $products = $product_query->where('name', 'LIKE', '%' . $request->keyword . '%');
-        }
+        // if ($request->keyword) {
+        //     $products = $product_query->where('name', 'LIKE', '%' . $request->keyword . '%');
+        // }
 
         // Get by category
         if ($request->category_id) {
@@ -186,157 +197,221 @@ class ProductController extends Controller
         //     $products = $product_query->orderBY($sortBy, $sortOrder)->get();
         // }
 
-        $products->load('category:id,name', 'color:id,color', 'size:id,size');
-
         return response()->json([
-            "status" => "OK",
+            "status" => 200,
             "data" => $products
-        ], 200);
+        ]);
     }
 
-    public function getAllProducts () {
-        // if($this->authorize('authorize')) {
-            $products = Product::all();
-            $products->load('category:id,name', 'color:id,color', 'size:id,size');
+    public function getAllProducts()
+    {
+        $products = Product::with('category', 'sizes', 'images', 'color')->get();
 
+        return response()->json([
+            'status' => 200,
+            'data' => $products
+        ]);
+    }
+
+    public function getProductByCategory($categoryId)
+    {
+        $category = Category::where('id', $categoryId)->first();
+
+        if (!$category) {
             return response()->json([
-                'status' => 'OK',
-                'data' => $products
-            ],200);
-        // }
-        // else {
-        //     return response()->json([
-        //         'status' => 'Error',
-        //         'message' => 'Only Admin has access'
-        //     ],401);
-        // }
+                'status' => 404,
+                'message' => 'No category found'
+            ]);
+        } else {
+            $product = Product::where('category_id', $categoryId)->get();
+            if (!$product) {
+                return response()->json([
+                    'status' => 400,
+                    'message' => 'No product found'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 200,
+                    'data' => [
+                        'product' => $product,
+                        'category' => $category
+                    ]
+                ]);
+            }
+        }
     }
 
     public function getProductById($id)
     {
-        $product = Product::with(['category', 'color'])->where('id', $id)->first();
+        $product = Product::with(['category', 'color', 'sizes', 'images'])->where('id', $id)->first();
 
         if (!$product) {
             return response()->json([
-                'status' => 'Error',
+                'status' => 404,
                 'message' => 'No product found'
-            ], 401);
+            ]);
         } else {
-            $product->load('category:id,name', 'color:id,color', 'size:id,size');
             return response()->json([
-                'status' => 'OK',
+                'status' => 200,
                 'data' => $product
             ]);
         }
     }
 
-    public function updateProduct(ProductUpdateRequest $request, $id)
+    public function getDetailProduct($categoryId, $productId)
     {
-        // if($this->authorize('authorize')) {
-            $product = Product::with(['category', 'color'])->where('id', $id)->first();
+        $category = Category::where('id', $categoryId)->first();
 
-            if (!$product) {
+        if (!$category) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'No category found'
+            ]);
+        } else {
+            $product = Product::with(['category', 'sizes', 'images', 'color'])->where('category_id', $categoryId)->where('id', $productId)->get();
+            if ($product->isEmpty()) {
                 return response()->json([
-                    'status' => 'Error',
+                    'status' => 400,
                     'message' => 'No product found'
                 ]);
             } else {
-                $category_id = Category::find($request->category_id);
-                $color_id = Color::find($request->color_id);
-    
-                if (!$category_id or !$color_id) {
-                    return response()->json([
-                        "status" => "Error",
-                        "message" => "Product could not be saved",
-                    ], 401);
-                }
-    
-                $image_avatar = $request->file('image_avatar');
-                if ($request->hasFile('image_avatar')) {
-                    $img_avatar = time() . '.' . $image_avatar->getClientOriginalExtension();
-                    $image_avatar->move(public_path('/images/avatar'), $img_avatar);
-                    $old_path_ava = public_path() . 'images/avatar' . $product->image_avatar;
-    
-                    if (File::exists($old_path_ava)) {
-                        File::delete($old_path_ava);
-                    }
-                } else {
-                    $img_avatar = $product->image_avatar;
-                }
-    
-                $images = $request->file('image');
-                $imageName = '';
-    
-                if ($request->hasFile('image')) {
-                    foreach ($images as $image) {
-                        $imgs = time() . '.' . $image_avatar->getClientOriginalExtension();
-                        $image->move(public_path('/images/images'), $imgs);
-                        $imageName = $imageName . $imgs . ",";
-                        $old_path = public_path() . 'images/images' . $product->image;
-    
-                        if (File::exists($old_path)) {
-                            File::delete($old_path);
-                        }
-                    }
-                } else {
-                    $imageName = $product->image;
-                }
-    
-                $product->update([
-                    "name" => $request->name,
-                    "description" => $request->description,
-                    "category_id" => $request->category_id,
-                    "color_id" => $request->color_id,
-                    "size_id" => $request->size_id,
-                    "image_avatar" => $img_avatar,
-                    "image" => $imageName,
-                    "price" => preg_replace('/[^0-9]/', '', $request->price),
-                    "quantity" => $request->quantity
-                ]);
-    
-                $product->load('category:id,name', 'color:id,color', 'size:id,size');
-    
                 return response()->json([
-                    "status" => "OK",
-                    "message" => "Product was updated successfully",
-                    "data" => $product
-                ], 200);
+                    'status' => 200,
+                    'data' => $product
+                ]);
             }
-        // }
-        // else {
-        //     return response()->json([
-        //         'status' => 'Error',
-        //         'message' => 'Only Admin has access'
-        //     ],401);
-        // }
+        }
     }
+
+    public function updateProduct(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'color_id' => 'required|exists:colors,id',
+            'price' => 'required|numeric|max:10000000',
+            'sizes' => 'required|array',
+            'sizes.*.id' => 'required|exists:sizes,id',
+            'sizes.*.quantity' => 'required|integer|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 422,
+                'errors' => $validator->errors(),
+            ]);
+        }
+
+        $product = Product::with(['category', 'color', 'sizes', 'images'])->findOrFail($id);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Product not found'
+            ]);
+        }
+
+        $product->name = $request->input('name');
+        $product->description = $request->input('description');
+        $product->category_id = $request->input('category_id');
+        $product->color_id = $request->input('color_id');
+        $product->price = $request->input('price');
+
+        // Update product avatar image
+        if ($request->hasFile('image_avatar')) {
+            $path = $product->image_avatar;
+            if (File::exists($path)) {
+                File::delete($path);
+            }
+            $file = $request->file('image_avatar');
+            $extension = $file->getClientOriginalExtension();
+            $fileName = time() . '.' . $extension;
+            $file->move('uploads/product/', $fileName);
+            $product->image_avatar = 'uploads/product/' . $fileName;
+        }
+
+        // Update product images
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+            // Delete existing images
+            foreach ($product->images as $existingImage) {
+                $path = $existingImage->image_path;
+                if (File::exists($path)) {
+                    File::delete($path);
+                }
+                $existingImage->delete();
+            }
+            // Upload and save new images
+            foreach ($images as $image) {
+                $extension = $image->getClientOriginalExtension();
+                $fileName = time() . '_' . uniqid() . '.' . $extension;
+                $image->move('uploads/product/', $fileName);
+
+                $productImage = new ProductImage;
+                $productImage->product_id = $product->id;
+                $productImage->image_path = 'uploads/product/' . $fileName;
+                $productImage->save();
+            }
+        }
+
+        $product->save(); // Save the product after updating avatar image and images
+
+        // Update product sizes
+        $sizes = $request->input('sizes');
+
+        // Remove existing sizes
+        $product->sizes()->detach();
+
+        foreach ($sizes as $size) {
+            $product->sizes()->attach($size['id'], ['quantity' => $size['quantity']]);
+        }
+
+        $productImages = $product->images;
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Product updated successfully',
+            'data' => $product
+        ]);
+    }
+
+
 
     public function deleteProduct($id)
     {
-        // if($this->authorize('authorize')){
-            $product = Product::with(['category', 'color'])->where('id', $id)->first();
+        $product = Product::with(['category', 'color', 'images', 'sizes'])->where('id', $id)->first();
 
-            if (!$product) {
-                return response()->json([
-                    'status' => 'Error',
-                    'message' => 'No product found'
-                ]);
-            } else {
-                $product->load('category:id,name', 'color:id,color');
-                $product->delete();
-    
-                return response()->json([
-                    "status" => "OK",
-                    "message" => "Product was deleted successfully",
-                    "data" => $product
-                ], 200);
-            }
-        // }
-        // else {
-        //     return response()->json([
-        //         'status' => 'Error',
-        //         'message' => 'Only Admin has access'
-        //     ],401);
-        // }
+        if (!$product) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'No product found'
+            ]);
+        } else {
+            $product->delete();
+
+            return response()->json([
+                "status" => 200,
+                "message" => "Product was deleted successfully",
+                "data" => $product
+            ]);
+        }
+    }
+
+    public function deleteProducts(Request $request)
+    {
+        $productIds = $request->input('productIds');
+        if (!is_array($productIds)) {
+            return response()->json(['status' => 400, 'message' => 'Invalid product IDs']);
+        }
+
+        try {
+            // Delete categories using the $categoryIds array
+            Product::whereIn('id', $productIds)->delete();
+
+            return response()->json(['status' => 200, 'message' => 'Products deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 500, 'message' => 'Failed to delete products']);
+        }
     }
 }

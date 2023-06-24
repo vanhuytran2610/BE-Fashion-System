@@ -13,9 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('sizes', function (Blueprint $table) {
+        Schema::create('administrative_units', function (Blueprint $table) {
             $table->id();
-            $table->string('size');
+            $table->string('full_name');
+            $table->string('full_name_en');
+            $table->string('short_name');
+            $table->string('short_name_en');
+            $table->string('code_name');
+            $table->string('code_name_en');
             $table->timestamps();
         });
     }
@@ -27,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('sizes');
+        Schema::dropIfExists('administrative_units');
     }
 };

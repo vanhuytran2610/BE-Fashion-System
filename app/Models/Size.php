@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Size extends Model
 {
     use HasFactory;
+    protected $fillable = ['size', 'weight', 'height'];
 
-    protected $fillable = ['size'];
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'product_sizes')->withPivot('quantity')->withTimestamps();
+    }
 }

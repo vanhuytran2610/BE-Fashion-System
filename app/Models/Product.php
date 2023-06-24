@@ -4,16 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Nicolaslopezj\Searchable\SearchableTrait;
+use App\Traits\SearchTrait;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SearchTrait;
 
     protected $fillable = [
-        'name', 'description', 'category_id', 'color_id', 'image_avatar', 'image', 'price', 'size_id', 'quantity'
+        'name', 'description', 'category_id', 'color_id', 'image_avatar', 'price'
     ];
-
-    public $appends = ['image_avatar_url'];
 
     public function category() {
         return $this->belongsTo(Category::class);
@@ -23,13 +23,28 @@ class Product extends Model
         return $this->belongsTo(Color::class);
     }
 
-    public function size() {
-        return $this->belongsTo(Size::class);
+    public function sizes() {
+        return $this->belongsToMany(Size::class, 'product_sizes')
+            ->withPivot('quantity')
+            ->withTimestamps();
     }
 
-    public function getImageAvatarUrlAttribute() {
-        return asset('images/avatar/'.$this->image_avatar);
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class);
     }
+
+    // public function setSizeAttribute($value) {
+    //     $this->attributes['size'] = json_encode($value);
+    // }
+
+    // public function getSizeAttribute($value) {
+    //     return $this->attributes['size'] = json_decode($value);
+    // }
+
+    // public function getImageAvatarUrlAttribute() {
+    //     return asset('images/avatar/'.$this->image_avatar);
+    // }
 
     // public function getImageUrlAttribute() {
     //     return asset('images/images/', array($this->image));

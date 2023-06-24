@@ -31,7 +31,7 @@ class AuthRegisterRequest extends FormRequest
             'confirm_password' => 'required|same:password', 
             'firstname' => 'required|min:2|max:100', 
             'lastname' => 'required|min:2|max:100', 
-            'role_id' => 'required'
+
         ];
     }
 

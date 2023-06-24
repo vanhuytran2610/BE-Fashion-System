@@ -20,14 +20,21 @@ return new class extends Migration
             $table->string('lastname');
             $table->string('phone');
             $table->string('address');
-            $table->string('district');
-            $table->string('city');
+            $table->string('ward_code');
+            $table->string('email');
+            $table->string('district_code');
+            $table->string('province_code');
             $table->string('payment_id')->nullable();
             $table->string('payment_mode');
             $table->string('tracking_no');
             $table->tinyInteger('status')->default('0');
             $table->text('note')->default('');
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('province_code')->references('code')->on('provinces')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('district_code')->references('code')->on('districts')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('ward_code')->references('code')->on('wards')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 
