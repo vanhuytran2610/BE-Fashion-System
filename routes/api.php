@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -57,6 +58,7 @@ Route::delete('/delete-cartItem/{cart_id}', [CartController::class, 'deleteCartI
 
 Route::post('/place-order', [CheckoutController::class, 'placeOrder']);
 Route::get('/orders', [OrderController::class, 'getOrdersByUser']);
+Route::get('/confirm-payment/{order_id}', [CheckoutController::class, 'confirmPayment'])->name('confirmPayment');
 
 Route::middleware(['auth:sanctum', 'isAPIAdmin'])->group(function () {
     Route::get('/checkingAuthenticated', function () {
@@ -108,13 +110,14 @@ Route::group(
         Route::get('/auth/get-all-products', [ProductController::class, 'getAllProducts']);
         Route::get('/auth/products', [ProductController::class, 'index']);
 
-        
-
         // Cart
         Route::get('/auth/orders', [OrderController::class, 'getOrders']);
         Route::get('/auth/order/{id}', [OrderController::class, 'getDetailOrder']);
         Route::delete('/auth/orders/{id}', [OrderController::class, 'destroy']);
         Route::post('/auth/orders', [OrderController::class, 'destroyMultiple']);
+
+       
+
     }
 );
 

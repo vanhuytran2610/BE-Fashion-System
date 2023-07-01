@@ -18,19 +18,33 @@ class CartController extends Controller
             $size_id = $request->size_id; // Assuming the size ID is passed in the request
 
             $product_check = Product::where('id', $product_id)->first();
+
             if ($product_check) {
                 if ($product_check->sizes()->where('sizes.id', $size_id)->exists()) {
+
+                    $selectedSize = $product_check->sizes()->where('sizes.id', $size_id)->first();
+                    $availableStock = $selectedSize->pivot->quantity;
+
+                    if ($product_quantity > $availableStock) {
+                        return response()->json([
+                            'status' => 407,
+                            'message' => 'Not enough product in stock'
+                        ]);
+                    }
+
                     if (Cart::where('product_id', $product_id)->where('user_id', $user_id)->where('size_id', $size_id)->exists()) {
                         return response()->json([
                             'status' => 409,
                             'message' => $product_check->name . ' already added to Cart'
                         ]);
-                    } else {
+                    }
+
+                    else {
                         $cart_item = Cart::create([
                             'user_id' => $user_id,
                             'product_id' => $product_id,
                             'product_quantity' => $product_quantity,
-                            'size_id' => $size_id // Set the selected size ID in the cart item
+                            'size_id' => $size_id, // Set the selected size ID in the cart item
                         ]);
 
                         return response()->json([
@@ -62,10 +76,9 @@ class CartController extends Controller
 
     public function viewCartByUser()
     {
-
         if (auth('sanctum')->user()) {
             $user_id = auth('sanctum')->user()->id;
-            $cart_items = Cart::with(['product','user', 'product.color'])->where('user_id', $user_id)->get();
+            $cart_items = Cart::with(['product', 'user', 'product.color', 'product.sizes'])->where('user_id', $user_id)->get();
             // Remove cart items with deleted products
             $cart_items = $cart_items->filter(function ($cartItem) {
                 return $cartItem->product !== null;
@@ -93,7 +106,7 @@ class CartController extends Controller
                 $cart_item->product_quantity += 1;
             } else if ($scope == "dec") {
                 $cart_item->product_quantity -= 1;
-            } 
+            }
 
             $cart_item->update();
 

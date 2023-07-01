@@ -68,7 +68,7 @@ class CategoryController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'categories' => 'required|array',
-            'categories.*.category' => 'required|string'
+            'categories.*.category' => 'required|string|unique:categories,category'
         ]);
         if ($validator->fails()) {
             return response()->json([

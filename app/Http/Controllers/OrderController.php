@@ -11,13 +11,26 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    public function getOrders()
+    public function getOrders(Request $request)
     {
         if (auth('sanctum')->user()) {
-            $order = Order::all();
+            $month = $request->input('month');
+            $date = $request->query('date');
+            $orderQuery = Order::orderBy('created_at', 'desc');
+
+            if ($month) {
+                $orderQuery->whereMonth('created_at', $month);
+            }
+
+            if ($date) {
+                $orderQuery->whereDate('created_at', $date);
+            }
+
+            $orders = $orderQuery->get();
+
             return response()->json([
                 'status' => 200,
-                'data' => $order
+                'data' => $orders->toArray()
             ]);
         } else {
             return response()->json([
@@ -54,14 +67,21 @@ class OrderController extends Controller
     public function getOrdersByUser()
     {
         $user = auth('sanctum')->user();
-        $orders = Order::where('user_id', $user->id)->with('orderItems.product', 'orderItems.product.color')->get();
+        if (!$user) {
+            return response()->json([
+                'status' => 401,
+                'message' => "Please login first"
+            ]);
+        } else {
+            $orders = Order::where('user_id', $user->id)->with('orderItems.product', 'orderItems.product.color')->orderBy('created_at', 'desc')->get();
 
-        $orders->created_at = Carbon::now('Asia/Ho_Chi_Minh');
-        //$orders->updated_at = $currentDateTime->format('Y-m-d H:i:s');
-        return response()->json([
-            'status' => 200,
-            'data' => $orders
-        ]);
+            $orders->created_at = Carbon::now('Asia/Ho_Chi_Minh');
+            //$orders->updated_at = $currentDateTime->format('Y-m-d H:i:s');
+            return response()->json([
+                'status' => 200,
+                'data' => $orders
+            ]);
+        }
     }
 
     public function destroy($id)
@@ -75,7 +95,7 @@ class OrderController extends Controller
         ]);
     }
 
-    
+
 
     public function destroyMultiple(Request $request)
     {
