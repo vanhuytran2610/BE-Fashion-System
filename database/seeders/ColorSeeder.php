@@ -25,6 +25,8 @@ class ColorSeeder extends Seeder
             ['color' => 'Black'],
             ['color' => 'Brown'],
             ['color' => 'Purple'],
+            ['color' => 'Gray'],
+            ['color' => 'Pink'],
         ]);
     }
 }
