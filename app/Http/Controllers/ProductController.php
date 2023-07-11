@@ -96,7 +96,7 @@ class ProductController extends Controller
     {
         $searchTerm = $request->input('search');
 
-        $products = Product::search($searchTerm)->get();
+        $products = Product::with('color', 'category', 'sizes')->search($searchTerm)->get();
 
         return response()->json($products);
     }

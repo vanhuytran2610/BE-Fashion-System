@@ -44,6 +44,7 @@ class CheckoutController extends Controller
             DB::beginTransaction();
 
             try {
+                $order_items = [];
                 foreach ($cart as $item) {
                     $selectedSize = $item->product->sizes()->find($item->size_id);
 
